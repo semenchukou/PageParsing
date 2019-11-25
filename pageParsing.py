@@ -70,32 +70,32 @@ def get_characteristics_from_table(table, car_name):
 
 def parse(html):
     soup = BeautifulSoup(html)
-    groups = soup.findAll("div", {"class": "mw-category-group"})
-    for group in groups:
-        first_group_name = group.find("h3").getText()
-        ul = group.find("ul")
+    models_groups = soup.findAll("div", {"class": "mw-category-group"})
+    for model in models_groups:
+        model_group_name = model.find("h3").getText()
+        ul = model.find("ul")
         for li in ul.findAll("li"):
-            first_name = li.find("a").getText()
+            model_name = li.find("a").getText()
             ref = li.find(href = True)
             second_soup = BeautifulSoup(get_html(second_url + ref['href']))
-            second_groups = second_soup.findAll("div", {"class": "mw-category-group"})
-            for sec_group in second_groups:
-                second_group_name = sec_group.find("h3").getText()
-                sec_ul = sec_group.find("ul")
-                for sec_li in sec_ul.findAll("li"):
-                    second_name = sec_li.find("a").getText()
+            types_groups = second_soup.findAll("div", {"class": "mw-category-group"})
+            for type_ in types_groups:
+                type_group_name = type_.find("h3").getText()
+                type_ul = type_.find("ul")
+                for sec_li in type_ul.findAll("li"):
+                    type_name = sec_li.find("a").getText()
                     sec_ref = sec_li.find(href = True)
                     third_soup = BeautifulSoup(get_html(second_url + sec_ref['href']))
                     table = third_soup.find("table", {"class" : "sinottico"})
                     if(table != None):
-                        '''img = table.find("a", {"class" : "image"}, href = True)
-                        pic_ref = img.find('img')'''
-                        path = "C:/Users/Alex/Desktop/iba/pics/" + clean_word(first_group_name) + '/' + clean_word(first_name) + '/' + clean_word(second_group_name) + '/' + clean_word(second_name) + '/'
+                        path = "C:/Users/Alex/Desktop/iba/pics/" + clean_word(model_group_name) + '/' + clean_word(model_name) + '/' + clean_word(type_group_name) + '/' + clean_word(type_name) + '/'
                         print(path.encode('utf-8'))
-                        '''if not os.path.exists(path.replace('//' , '/')):
+                        '''img = table.find("a", {"class" : "image"}, href = True)
+                        pic_ref = img.find('img')
+                        if not os.path.exists(path.replace('//' , '/')):
                             os.makedirs(path)
-                        download_picture('https:' + pic_ref['src'], path, clean_word(second_name))'''
-                        get_characteristics_from_table(table, clean_word(second_name))
+                        download_picture('https:' + pic_ref['src'], path, clean_word(type_name))'''
+                        get_characteristics_from_table(table, clean_word(type_name))
                         
 
 
