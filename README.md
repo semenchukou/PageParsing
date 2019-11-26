@@ -5,7 +5,7 @@ The script does two things:
   2. Saves 5 main characteristics to json file.(If any of yhe characteristics is not present, than it's value is saved as 0)
 
 Graph represents mean values of weight for different models:
-  ![alt text](https://github.com/semenchukou/PageParsing/blob/master/avg_weight.png)
+  ![alt text](https://github.com/semenchukou/PageParsing/blob/master/graphs/avg_weight.png)
   
 Graph represents median values of length and heigth for different models:
-  ![alt text](https://github.com/semenchukou/PageParsing/blob/master/median_length_heigtn.png)
+  ![alt text](https://github.com/semenchukou/PageParsing/blob/master/graphs/median_length_heigtn.png)
