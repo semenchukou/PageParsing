@@ -1,16 +1,22 @@
 import urllib.request
 from bs4 import BeautifulSoup
-import bs4
 import requests
 import os, sys
-import urllib.request
 import re
 import json
 import pandas as pd
+import matplotlib.pyplot as plt
 
 url = 'https://it.wikipedia.org/wiki/Categoria:Automobili_per_marca'
 second_url = 'https://it.wikipedia.org/'
 file_name = "characteristics.json"
+dtypes= {
+            'Height': 'float64',
+            'Length': 'float64',
+            'Model': 'object',
+            'Pace': 'float64',
+            'Weight': 'float64',
+            'Width':  'float64'}
 characteristics = {}
 
 def download_picture(url, file_path, file_name):
@@ -26,26 +32,26 @@ def clean_word(word):
 
 def get_characteristic(tr, characteristic, car_name, is_dimension_mm, destination):
     if is_dimension_mm == True:
-        mm = True
+        mm = True #some values are in meters
         millimm = 'mm'
         found_str = tr.find("td").getText().replace('\xa0', " ").strip()
         if millimm not in found_str:
             mm = False
         values = found_str.split(' ')
         for i in range(len(values)):
-            value = re.sub(r" ?\[[^)]+\]", "", values[i]).replace(',' , '.')
+            value = re.sub(r" ?\[[^)]+\]", "", values[i]).replace(',' , '.') #to deal with '2[smth]' situations + make convertable to float
             if value.replace('.' , '').isdigit():
                 if mm is False:
                     destination[characteristic] = float(value) * 1000
                 else:
-                    if(len(value) == 1):
+                    if(len(value) == 1): #to deal with '3 100 mm' situations
                         next_val = re.sub(r" ?\[[^)]+\]", "", values[i + 1])
                         if next_val.isdigit():
                             value += next_val
                         else:
-                            continue
+                            continue #to deal with '3 da 3 100 mm' situations
                     else:
-                        destination[characteristic] = float(value.replace('.', ''))
+                        destination[characteristic] = float(value.replace('.', '')) #to deal with '3.100 mm' situations
                 mm = True
                 break    
     else:
@@ -102,17 +108,17 @@ def get_characteristics_from_table(table, car_name, model):
     chars_amount = len(chars)
     if chars_amount == 6:
         characteristics[car_name] = chars
-    else:
+    else: #not given characteristics are equal 0
         if lung_added == False:
-            chars['Length'] = 0
+            chars['Length'] = 0.0
         if larg_added == False:
-            chars['Width'] = 0
+            chars['Width'] = 0.0
         if alt_added == False:
-            chars['Height'] = 0
+            chars['Height'] = 0.0
         if passo_added == False:
-            chars['Pace'] = 0
+            chars['Pace'] = 0.0
         if massa_added == False:
-            chars['Weight'] = 0
+            chars['Weight'] = 0.0
         characteristics[car_name] = chars
 
 
@@ -151,8 +157,15 @@ def main():
     '''parse(get_html(url))
     with open(file_name, 'w') as outfile:
         json.dump(characteristics, outfile)'''
-    df = pd.read_json (r'characteristics.json')
+    df = pd.read_json (r'characteristics.json', dtype=dict)
     df = df.transpose()
+    df= df.astype(dtypes)
+    
+    #df[df.Weight > 0].groupby("Model")["Weight"].mean().plot(kind='bar')
+    #plt.show()
+    
+    df[(df.Height > 0) & (df.Length > 0)].groupby("Model")["Height", "Length"].median().plot(kind='line')
+    plt.show()
     #print(df[((df.Length < 30) & (df.Length >0)) | ((df.Width < 30) & (df.Width >0)) | ((df.Height < 30) & (df.Height >0)) | ((df.Pace < 30) & (df.Pace  >0)) | ((df.Weight < 30) & (df.Weight >0))])
     
 if __name__ == "__main__":
