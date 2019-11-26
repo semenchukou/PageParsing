@@ -6,6 +6,7 @@ import os, sys
 import urllib.request
 import re
 import json
+import pandas as pd
 
 url = 'https://it.wikipedia.org/wiki/Categoria:Automobili_per_marca'
 second_url = 'https://it.wikipedia.org/'
@@ -23,7 +24,7 @@ def get_html(url):
 def clean_word(word):
     return word.replace(':', ' ').replace('/', ' ').replace('"', ' ').replace('"', '').replace('*', '')
 
-def get_and_add_characteristic(tr, characteristic, car_name, is_dimension_mm):
+def get_characteristic(tr, characteristic, car_name, is_dimension_mm, destination):
     if is_dimension_mm == True:
         mm = True
         millimm = 'mm'
@@ -31,41 +32,88 @@ def get_and_add_characteristic(tr, characteristic, car_name, is_dimension_mm):
         if millimm not in found_str:
             mm = False
         values = found_str.split(' ')
-        for value in values:
-            value = re.sub(r" ?\[[^)]+\]", "", value).replace(',' , '.')
+        for i in range(len(values)):
+            value = re.sub(r" ?\[[^)]+\]", "", values[i]).replace(',' , '.')
             if value.replace('.' , '').isdigit():
                 if mm is False:
-                    characteristics[car_name].append({characteristic : float(value) * 1000})
+                    destination[characteristic] = float(value) * 1000
                 else:
-                    characteristics[car_name].append({characteristic : value})
+                    if(len(value) == 1):
+                        next_val = re.sub(r" ?\[[^)]+\]", "", values[i + 1])
+                        if next_val.isdigit():
+                            value += next_val
+                        else:
+                            continue
+                    else:
+                        destination[characteristic] = float(value.replace('.', ''))
                 mm = True
-                break           
+                break    
     else:
+        kg = True
+        kilogramm = 'kg'
         found_str = tr.find("td").getText().replace('\xa0', " ").strip()
+        if kilogramm not in found_str:
+            kg = False
         values = found_str.split(' ')
-        for value in values:
-            value = re.sub(r" ?\[[^)]+\]", "", value).replace(',' , '.')
+        for i in range(len(values)):
+            value = re.sub(r" ?\[[^)]+\]", "", values[i]).replace(',' , '.')
             if value.replace('.' , '').isdigit():
-                characteristics[car_name].append({characteristic : value})
+                if kg is False:
+                    destination[characteristic] = float(value) * 1000
+                else:
+                    if(len(value) == 1):
+                        next_val = re.sub(r" ?\[[^)]+\]", "", values[i + 1])
+                        if next_val.isdigit():
+                            value += next_val
+                        else:
+                            continue
+                    else:
+                        destination[characteristic] = float(value.replace('.', ''))
+                kg = True
                 break
 
-def get_characteristics_from_table(table, car_name):
-    characteristics[car_name] = []
+def get_characteristics_from_table(table, car_name, model):
+    lung_added = False
+    larg_added = False
+    alt_added = False
+    passo_added = False
+    massa_added = False
+    chars = {}
     trs = table.findAll("tr")
     for tr in trs:
         ths = tr.findAll("th")
         for th in ths:
             if th.text.strip() == "Lunghezza":
-                get_and_add_characteristic(tr, "Lunghezza", car_name, True)
+                get_characteristic(tr, "Length", car_name, True, chars)
+                lung_added = True
             elif th.text.strip() == "Larghezza":
-                get_and_add_characteristic(tr, "Larghezza", car_name, True)
+                get_characteristic(tr, "Width", car_name, True, chars)
+                larg_added = True
             elif th.text.strip() == "Altezza":
-                get_and_add_characteristic(tr, "Altezza", car_name, True)
+                get_characteristic(tr, "Height", car_name, True, chars)
+                alt_added = True
             elif th.text.strip() == "Passo":
-                get_and_add_characteristic(tr, "Passo", car_name, True)
+                get_characteristic(tr, "Pace", car_name, True, chars)
+                passo_added = True
             elif th.text.strip() == "Massa" or th.text.strip() == "Peso":
-                get_and_add_characteristic(tr, "Massa", car_name, False)
-    print(characteristics)
+                get_characteristic(tr, "Weight", car_name, False, chars)
+                massa_added = True
+    chars['Model'] = model
+    chars_amount = len(chars)
+    if chars_amount == 6:
+        characteristics[car_name] = chars
+    else:
+        if lung_added == False:
+            chars['Length'] = 0
+        if larg_added == False:
+            chars['Width'] = 0
+        if alt_added == False:
+            chars['Height'] = 0
+        if passo_added == False:
+            chars['Pace'] = 0
+        if massa_added == False:
+            chars['Weight'] = 0
+        characteristics[car_name] = chars
 
 
 def parse(html):
@@ -95,14 +143,17 @@ def parse(html):
                         if not os.path.exists(path.replace('//' , '/')):
                             os.makedirs(path)
                         download_picture('https:' + pic_ref['src'], path, clean_word(type_name))'''
-                        get_characteristics_from_table(table, clean_word(type_name))
+                        get_characteristics_from_table(table, clean_word(type_name), model_name)
                         
 
 
 def main():
-    parse(get_html(url))
+    '''parse(get_html(url))
     with open(file_name, 'w') as outfile:
-        json.dump(characteristics, outfile)
+        json.dump(characteristics, outfile)'''
+    df = pd.read_json (r'characteristics.json')
+    df = df.transpose()
+    #print(df[((df.Length < 30) & (df.Length >0)) | ((df.Width < 30) & (df.Width >0)) | ((df.Height < 30) & (df.Height >0)) | ((df.Pace < 30) & (df.Pace  >0)) | ((df.Weight < 30) & (df.Weight >0))])
     
 if __name__ == "__main__":
     main()
