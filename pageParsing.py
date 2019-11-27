@@ -20,7 +20,7 @@ dtypes= {
 characteristics = {}
 
 def download_picture(url, file_path, file_name):
-    full_path = file_path + file_name + '.jpg'
+    full_path = file_path + file_name
     urllib.request.urlretrieve(url, full_path)
 
 def get_html(url):
@@ -140,15 +140,19 @@ def parse(html):
                     type_name = sec_li.find("a").getText()
                     sec_ref = sec_li.find(href = True)
                     third_soup = BeautifulSoup(get_html(second_url + sec_ref['href']))
+                    path = "pics/" + clean_word(model_group_name) + '/' + clean_word(model_name) + '/' + clean_word(type_group_name) + '/' + clean_word(type_name) + '/'
+                    print(path.encode('utf-8'))    
+                    if not os.path.exists(path.replace('//' , '/')):
+                        os.makedirs(path)
+                    imgs = third_soup.findAll("a", {"class" : "image"})
+                    for img in imgs:
+                        pic_ref = img.find('img')
+                        link = pic_ref['src']
+                        link_parts = link.split('/')
+                        if int(pic_ref['width']) > 45 and int(pic_ref['height']) > 45: #to get rid of non-car pics
+                            download_picture('https:' + link, path, link_parts[len(link_parts) - 1])
                     table = third_soup.find("table", {"class" : "sinottico"})
                     if(table != None):
-                        path = "C:/Users/Alex/Desktop/iba/pics/" + clean_word(model_group_name) + '/' + clean_word(model_name) + '/' + clean_word(type_group_name) + '/' + clean_word(type_name) + '/'
-                        print(path.encode('utf-8'))
-                        img = table.find("a", {"class" : "image"}, href = True)
-                        pic_ref = img.find('img')
-                        if not os.path.exists(path.replace('//' , '/')):
-                            os.makedirs(path)
-                        download_picture('https:' + pic_ref['src'], path, clean_word(type_name))
                         get_characteristics_from_table(table, clean_word(type_name), model_name)
                         
 
@@ -160,7 +164,6 @@ def main():
     df = pd.read_json (r'characteristics.json', dtype=dict)
     df = df.transpose()
     df= df.astype(dtypes)
-    
     df[df.Weight > 0].groupby("Model")["Weight"].mean().plot(kind='bar')
     plt.show()
     
