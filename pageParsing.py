@@ -144,25 +144,25 @@ def parse(html):
                     if(table != None):
                         path = "C:/Users/Alex/Desktop/iba/pics/" + clean_word(model_group_name) + '/' + clean_word(model_name) + '/' + clean_word(type_group_name) + '/' + clean_word(type_name) + '/'
                         print(path.encode('utf-8'))
-                        '''img = table.find("a", {"class" : "image"}, href = True)
+                        img = table.find("a", {"class" : "image"}, href = True)
                         pic_ref = img.find('img')
                         if not os.path.exists(path.replace('//' , '/')):
                             os.makedirs(path)
-                        download_picture('https:' + pic_ref['src'], path, clean_word(type_name))'''
+                        download_picture('https:' + pic_ref['src'], path, clean_word(type_name))
                         get_characteristics_from_table(table, clean_word(type_name), model_name)
                         
 
 
 def main():
-    '''parse(get_html(url))
+    parse(get_html(url))
     with open(file_name, 'w') as outfile:
-        json.dump(characteristics, outfile)'''
+        json.dump(characteristics, outfile)
     df = pd.read_json (r'characteristics.json', dtype=dict)
     df = df.transpose()
     df= df.astype(dtypes)
     
-    #df[df.Weight > 0].groupby("Model")["Weight"].mean().plot(kind='bar')
-    #plt.show()
+    df[df.Weight > 0].groupby("Model")["Weight"].mean().plot(kind='bar')
+    plt.show()
     
     df[(df.Height > 0) & (df.Length > 0)].groupby("Model")["Height", "Length"].median().plot(kind='line')
     plt.show()
